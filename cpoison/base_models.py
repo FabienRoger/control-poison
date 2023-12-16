@@ -5,8 +5,6 @@ from lowstakes.llm import OpenAIChatModel, call_llm, Role
 from cpoison.config import TRUSTED_MODEL, UNTRUSTED_MODEL
 from typing import Optional
 
-from cpoison.eval import extract_eval_tuple, get_answer, is_one_best
-
 
 class Model(ABC):
     @abstractmethod

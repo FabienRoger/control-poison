@@ -1,10 +1,8 @@
 from abc import ABC, abstractmethod
 from lowstakes.utils import AndMetadata, WithInfo, Metadata
-from cpoison.eval import EvalTuple, extract_eval_tuple, get_answer, is_one_best
 from cpoison.data import ComparisonDs
-from cpoison.annotators import Annotator
-from cpoison.models import Model, DirectModel
-from attrs import define
+from cpoison.models import LongerBetterModel, OppositeModel
+from cpoison.base_models import Model, DirectModel
 
 
 class Redteam(ABC, WithInfo):
@@ -38,29 +36,11 @@ class Honest(Redteam):
         return DirectModel.untrusted(), {}
 
 
-@define
-class OppositeModel(Model):
-    base: Model
-
-    async def call(self, instruction: str, input: str) -> AndMetadata[str]:
-        correct, m = await self.base.call(instruction, input)
-        incorrect = get_answer(not is_one_best(correct))
-        return incorrect, m
-
-
 class Lier(Redteam):
     def get_model(
         self, supervised: ComparisonDs, unsupervised: ComparisonDs, protocol_info: Metadata
     ) -> AndMetadata[Model]:
         return OppositeModel(DirectModel.untrusted()), {}
-
-
-class LongerBetterModel(Model):
-    async def call(self, instruction: str, input: str) -> AndMetadata[str]:
-        t = extract_eval_tuple(input)
-        one_is_best = len(t.output_1) > len(t.output_2)
-        correct = get_answer(one_is_best)
-        return correct, {}
 
 
 class LongerBetter(Redteam):

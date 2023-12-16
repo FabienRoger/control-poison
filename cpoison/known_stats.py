@@ -1,5 +1,5 @@
 from cpoison.data import ComparisonDs
-from cpoison.models import DirectModel
+from cpoison.base_models import DirectModel
 from cpoison.annotators import get_simple_annotator
 from lowstakes.utils import gather_tqdm
 

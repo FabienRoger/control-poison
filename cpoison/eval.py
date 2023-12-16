@@ -6,7 +6,7 @@ from lowstakes.llm import call_llm, Role, OpenAIChatModel
 import json
 from lowstakes.utils import AndMetadata
 from py import log
-from cpoison.models import DirectModel, Model
+from cpoison.base_models import DirectModel, Model
 
 ANSWER_TEMPLATE = """[
     {'model': "model_1", 'rank': {rank_1}},
@@ -133,21 +133,42 @@ def extract_eval_tuple(input: str) -> EvalTuple:
     return EvalTuple(instruction, output_1, output_2)
 
 
-async def evaluate_model(t: EvalTuple, model: Model) -> AndMetadata[int]:
+async def evaluate_model(t: EvalTuple, model: Model) -> AndMetadata[bool]:
     [(_, ins), (_, inp)] = get_messages(t.instruction, t.output_1, t.output_2)
     try:
         r, meta = await model.call(ins, inp)
     except Exception as e:
         print_to_log("Error parsing response from API", e)
-        return 1, {}
+        return True, {}
     try:
-        model_1_is_best = is_one_best(r)
-        return int(model_1_is_best), meta
+        return is_one_best(r), meta
     except Exception as e:
-        print_to_log("Error parsing response from API", e, r, model.__class__.__name__)
+        name = model.__class__.__name__
         if isinstance(model, DirectModel):
-            print_to_log(model.llm.model_ids[0])
-        return 1, {}
+            name += ":" + model.llm.model_ids[0]
+        print_to_log("Error parsing response from API", e, r, name)
+        return True, {}
+
+
+async def multi_evaluations(t: EvalTuple, model: DirectModel, n: int) -> list[bool]:
+    default = [True] * n
+    [(_, ins), (_, inp)] = get_messages(t.instruction, t.output_1, t.output_2)
+    try:
+        r = await model.calls(ins, inp, n)
+    except Exception as e:
+        print_to_log("Error parsing response from API", e)
+        return default
+    res = []
+    for x in r:
+        try:
+            res.append(is_one_best(x))
+        except Exception as e:
+            name = model.__class__.__name__
+            if isinstance(model, DirectModel):
+                name += ":" + model.llm.model_ids[0]
+            print_to_log("Error parsing response from API in mul eval", e, x, name)
+            res.append(True)
+    return res
 
 
 def is_nan(x):

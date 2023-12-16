@@ -9,9 +9,9 @@ from cpoison.redteams import Redteam
 from cpoison.data import ComparisonDs
 from lowstakes.utils import gather_tqdm, Metadata
 from cpoison.annotators import get_simple_annotator
-from cpoison.models import DirectModel
+from cpoison.base_models import DirectModel
 
-VERSION = "0.1"
+VERSION = "0.2"
 
 
 class GenData(TypedDict):
@@ -65,8 +65,7 @@ async def gen_labels(protocol: Protocol, redteam: Redteam, n_supervised: int = 2
 
 
 class GenFtData(TypedDict):
-    long_id: str
-    short_id: str
+    ft_id: str
     protocol: Metadata
     redteam: Metadata
     gen_data: GenData
@@ -97,9 +96,6 @@ async def gen_and_ft(
     n_unsupervised: int = 400,
     n_supervised_test: int = 200,
 ):
-    id = f"{protocol.info}_{redteam.info}_{n_supervised}_{n_unsupervised}_{n_supervised_test}_{VERSION}"
-    short_hex_id = hashlib.sha256(id.encode()).hexdigest()[:12]
-
     gen_data = await gen_labels(protocol, redteam, n_supervised, n_unsupervised)
 
     test_ds = await ComparisonDs.from_alpaca("val", range(n_supervised, n_supervised + n_supervised_test))
@@ -131,14 +127,14 @@ async def gen_and_ft(
     exp_annotations, exp_an_meta = await get_annotations(exp_test_ds, trusted)
 
     relabel_ds = ComparisonDs(gen_data["eval_tuples"], gen_data["annotations"], gen_data["output_1_is_ref"])
-    new_model = await train(relabel_ds, f"cp_{short_hex_id}", val_ds=test_ds, base_model=trusted.llm.model_ids[0])
+    ft_id = relabel_ds.hash()[:10]
+    new_model = await train(relabel_ds, f"cp_{ft_id}", val_ds=test_ds, base_model=trusted.llm.model_ids[0])
 
     post_annotations, post_an_meta = await get_annotations(test_ds, new_model)
     post_exp_annotations, post_exp_an_meta = await get_annotations(exp_test_ds, new_model)
 
     return GenFtData(
-        long_id=id,
-        short_id=short_hex_id,
+        ft_id=ft_id,
         protocol=protocol.info,
         redteam=redteam.info,
         gen_data=gen_data,

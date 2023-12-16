@@ -8,7 +8,7 @@ from lowstakes.llm import Role, OpenAIChatModel
 
 from cpoison.data import ComparisonDs
 from cpoison.eval import EvalTuple, get_answer_and_messages
-from cpoison.models import DirectModel
+from cpoison.base_models import DirectModel
 
 
 def try_and_wait(fn):

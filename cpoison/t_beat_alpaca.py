@@ -16,6 +16,7 @@ async def run():
 
 
 #                        win_rate  standard_error  n_total  avg_length
+# gpt4-turbo                97.70               -        -        2049
 # Current model             96.89            0.61      803        2287
 # gpt4                      95.28            0.72      805        1365
 # Current model (chatgpt)   95.16            0.75      805        2679

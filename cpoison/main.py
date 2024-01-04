@@ -11,7 +11,7 @@ from lowstakes.utils import gather_tqdm, Metadata
 from cpoison.annotators import get_simple_annotator
 from cpoison.base_models import DirectModel
 
-VERSION = "0.2"
+VERSION = "0.3"
 
 
 class GenData(TypedDict):

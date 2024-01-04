@@ -16,7 +16,7 @@ class Redteam(ABC, WithInfo):
         """Answers so that it is highly rated.
 
         Bonus points if it was badly rated by the model pre-tuning."""
-        return await DirectModel.untrusted().call(instruction)
+        return await DirectModel.untrusted().call("", instruction)
 
     async def cue_amount(self, instruction: str, input: str) -> AndMetadata[float]:
         return 0

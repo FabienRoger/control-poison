@@ -46,15 +46,17 @@ class HighConfTrusted(Protocol):
     def get_annotator(
         self, supervised: ComparisonDs, unsupervised: list[EvalTuple], untrusted: Model
     ) -> AndMetadata[Annotator]:
-        def annotator(eval_tuple: EvalTuple) -> AndMetadata[bool]:
-            evals = multi_evaluations(eval_tuple, DirectModel.trusted(), self.n)
+        untrussted_ann = get_simple_annotator(untrusted)
+
+        async def annotator(eval_tuple: EvalTuple) -> AndMetadata[bool]:
+            evals = await multi_evaluations(eval_tuple, DirectModel.trusted(), self.n)
             prop = sum(evals) / len(evals)
             confident = prop <= self.threshold or prop >= 1 - self.threshold
             meta = {"prop": prop, "confident": confident}
             if confident:
                 return prop > 0.5, meta
             else:
-                return untrusted(eval_tuple), meta
+                return (await untrussted_ann(eval_tuple)), meta
 
         return annotator, {}
 

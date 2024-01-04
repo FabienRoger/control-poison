@@ -23,7 +23,7 @@ class DirectModel(Model):
         r = await call_llm(self.llm, [("system", instruction), ("user", input)])
         return r[0].completion if r else "", {}
 
-    async def calls(self, instruction: str, inputs: str, n: int) -> list[str]:
+    async def calls(self, instruction: str, input: str, n: int) -> list[str]:
         r = await call_llm(self.llm, [("system", instruction), ("user", input)], temperature=1, n=n)
         return [x.completion for x in r]
 

@@ -43,7 +43,8 @@ def write_lock(model_name, content):
 
 
 def remove_lock(model_name):
-    (Path(__file__).parent.parent / ".locks" / model_name).unlink()
+    if lock_exists(model_name):
+        (Path(__file__).parent.parent / ".locks" / model_name).unlink()
 
 
 async def train(
